@@ -40,7 +40,10 @@ import { AuthService } from '../../core/services/auth.service';
             <div class="user-name">{{ username }}</div>
             <div class="user-role">{{ role }}</div>
           </div>
-          <button class="btn btn-ghost" (click)="logout()">Sign out</button>
+          <div class="sidebar-actions">
+            <button class="btn btn-ghost" (click)="logout()">Sign out</button>
+            <button class="btn btn-icon" title="Toggle dark mode">🌓</button>
+          </div>
         </div>
       </aside>
 
@@ -93,11 +96,16 @@ import { AuthService } from '../../core/services/auth.service';
     .user-name { font-weight: 600; color: var(--ink); font-size: 14px; }
     .user-role { font-size: 12px; color: var(--muted); }
     .content { flex: 1; min-width: 0; }
+    .sidebar-actions { display: flex; align-items: center; gap: 8px; padding: 0 8px; }
+    .btn { cursor: pointer; border: none; background: transparent; font-size: 14px; }
+    .btn-icon { font-size: 18px; padding: 4px; border-radius: 4px; }
+    .btn-icon:hover { background: var(--paper); }
 
     @media (max-width: 760px) {
       .shell { flex-direction: column; }
       .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; flex-wrap: wrap; }
       .nav { flex-direction: row; flex-wrap: wrap; }
+      .sidebar-actions { margin-left: auto; }
     }
   `]
 })
