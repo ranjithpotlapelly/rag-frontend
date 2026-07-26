@@ -1,0 +1,29 @@
+✅ ├───────────────┼─────────────────────────────┤
+   │ npm start     │ Start dev server with proxy │
+   ├───────────────┼─────────────────────────────┤
+   │ npm run build │ Build for production        │
+   ├───────────────┼─────────────────────────────┤
+   │ npm test      │ Run unit tests              │
+   ├───────────────┼─────────────────────────────┤
+   │ npm run watch │ Build in watch mode (dev)   │
+   └───────────────┴─────────────────────────────┘
+
+
+  1. Open a terminal (PowerShell or Command Prompt)
+
+  2. Navigate to the project folder:
+  cd C:\Users\Ranjith\Downloads\files-rag\rag-frontend-angular\rag-frontend
+
+  3. Install dependencies (only needed once):
+  npm install
+
+  4. Start the dev server:
+  npm start
+
+  or equivalently:
+
+
+
+npm npm
+   The app uses a proxy config (proxy.conf.json) which likely forwards API calls to your backend. Make sure your backend is also running if the app makes API
+   requests.n
