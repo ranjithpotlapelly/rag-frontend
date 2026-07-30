@@ -4,6 +4,7 @@ import { AuthService } from '../services/auth.service';
 
 /**
  * Auth Guard — blocks access to protected routes when not logged in.
+ * Redirects unauthenticated users to the /login route before denying activation.
  */
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
