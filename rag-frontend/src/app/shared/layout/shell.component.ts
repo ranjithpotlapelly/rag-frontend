@@ -30,9 +30,6 @@ import { AuthService } from '../../core/services/auth.service';
           <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
             <span class="nav-ico">📊</span> Dashboard
           </a>
-          <a routerLink="/billing" routerLinkActive="active" class="nav-item">
-            <span class="nav-ico">💳</span> Plan & Billing
-          </a>
         </nav>
 
         <div class="sidebar-foot">

@@ -2,14 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { QueryResponse, IngestResult, UsageStats, IngestionStatus } from '../models/models';
+import { QueryResponse, IngestResult, UsageStats, IngestionStatus, DocumentSummary } from '../models/models';
 
 /**
  * RagService — calls the backend RAG endpoints.
  *   query()    → ask a question, get a cited answer
  *   ingest()   → upload a document
  *   getUsage() → dashboard stats
- *   checkout() → start a plan upgrade
  */
 @Injectable({ providedIn: 'root' })
 export class RagService {
@@ -33,12 +32,17 @@ export class RagService {
     return this.http.get<IngestionStatus>(`${this.api}/ingest/status/${id}`);
   }
 
-  getUsage(tenantId: string): Observable<UsageStats> {
-    return this.http.get<UsageStats>(`${this.api}/admin/dashboard/usage/${tenantId}`);
+  /** List documents already indexed for the caller's tenant. */
+  listDocuments(): Observable<DocumentSummary[]> {
+    return this.http.get<DocumentSummary[]>(`${this.api}/ingest`);
   }
 
-  checkout(tenantId: string, plan: string): Observable<{ checkoutUrl: string }> {
-    return this.http.post<{ checkoutUrl: string }>(
-      `${this.api}/billing/checkout`, { tenantId, plan });
+  /** Delete a document: removes it from the vector store, MinIO, and status tracking. */
+  deleteDocument(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.api}/ingest/${id}`);
+  }
+
+  getUsage(tenantId: string): Observable<UsageStats> {
+    return this.http.get<UsageStats>(`${this.api}/admin/dashboard/usage/${tenantId}`);
   }
 }

@@ -7,6 +7,10 @@ import { ChatMessage } from '../../core/models/models';
  * Chat — the core Q&A experience.
  * User asks a question; backend runs the RAG pipeline; answer shows
  * with the source documents it was drawn from.
+ *
+ * Chat history lives only in this component's signal (nothing is
+ * persisted server-side), so deleting a question or clearing the
+ * whole conversation is a purely client-side operation.
  */
 @Component({
   selector: 'app-chat',
@@ -19,6 +23,9 @@ import { ChatMessage } from '../../core/models/models';
           <div class="eyebrow">Ask</div>
           <h1>Question your documents</h1>
         </div>
+        @if (messages().length) {
+          <button class="btn-clear" (click)="clearChat()" title="Clear entire conversation">🗑 Clear chat</button>
+        }
       </header>
 
       <div class="chat" #scroll>
@@ -55,13 +62,22 @@ import { ChatMessage } from '../../core/models/models';
                 }
               }
             </div>
+            @if (m.role === 'user' && !m.pending) {
+              <button class="msg-del" (click)="deleteQuestion($index)" title="Delete this question">✕</button>
+            }
           </div>
         }
       </div>
 
       <div class="composer">
-        <input class="input" [(ngModel)]="draft" placeholder="Ask a question…"
-               [disabled]="busy()" (keyup.enter)="send()" />
+        <div class="input-wrap">
+          <input class="input" [(ngModel)]="draft" placeholder="Ask a question…"
+                 [disabled]="busy()" (keyup.enter)="send()" />
+          @if (draft.trim()) {
+            <button class="clear-btn" type="button" [disabled]="busy()"
+                    (click)="draft = ''" title="Clear question">✕</button>
+          }
+        </div>
         <button class="btn btn-primary" [disabled]="busy() || !draft.trim()" (click)="send()">
           {{ busy() ? '…' : 'Ask' }}
         </button>
@@ -70,8 +86,13 @@ import { ChatMessage } from '../../core/models/models';
   `,
   styles: [`
     .page { display: flex; flex-direction: column; height: 100vh; padding: 28px 32px; }
-    .page-head { margin-bottom: 16px; }
+    .page-head { margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; }
     .page-head h1 { font-size: 22px; margin-top: 2px; }
+    .btn-clear {
+      border: 1px solid var(--line); background: var(--surface); color: var(--red);
+      border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .btn-clear:hover { background: var(--red-lt); border-color: var(--red); }
     .chat { flex: 1; overflow-y: auto; padding: 8px 0; display: flex; flex-direction: column; gap: 16px; }
     .empty { text-align: center; margin: auto; max-width: 440px; }
     .empty-ico { font-size: 40px; margin-bottom: 12px; }
@@ -82,8 +103,9 @@ import { ChatMessage } from '../../core/models/models';
       color: var(--slate); cursor: pointer; transition: all 0.12s;
     }
     .chip:hover { border-color: var(--indigo); color: var(--indigo); }
-    .msg { display: flex; }
+    .msg { display: flex; align-items: flex-start; gap: 8px; }
     .msg.user { justify-content: flex-end; }
+    .msg.user .msg-del { order: -1; }
     .bubble {
       max-width: 680px; padding: 14px 18px;
       background: var(--surface); border: 1px solid var(--line);
@@ -91,13 +113,28 @@ import { ChatMessage } from '../../core/models/models';
     }
     .msg.user .bubble { background: var(--indigo); color: #fff; border-color: var(--indigo); }
     .bubble-text { white-space: pre-wrap; line-height: 1.6; }
+    .msg-del {
+      flex-shrink: 0; margin-top: 10px; border: none; background: transparent; color: var(--muted);
+      cursor: pointer; font-size: 12px; width: 20px; height: 20px; border-radius: 50%; line-height: 1;
+      opacity: 0; transition: opacity 0.12s;
+    }
+    .msg:hover .msg-del { opacity: 1; }
+    .msg-del:hover { background: var(--red-lt); color: var(--red); }
     .sources { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
     .sources-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
     .source { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; font-size: 13px; }
     .source-file { color: var(--ink); font-weight: 550; }
     .source-meta { color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
     .composer { display: flex; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }
-    .composer .input { flex: 1; }
+    .input-wrap { flex: 1; position: relative; display: flex; }
+    .input-wrap .input { flex: 1; padding-right: 34px; }
+    .clear-btn {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      border: none; background: transparent; color: var(--muted); cursor: pointer;
+      font-size: 13px; width: 22px; height: 22px; border-radius: 50%; line-height: 1;
+    }
+    .clear-btn:hover:not(:disabled) { background: var(--paper); color: var(--ink); }
+    .clear-btn:disabled { opacity: 0.5; cursor: default; }
     .typing { display: inline-flex; gap: 4px; align-items: center; height: 20px; }
     .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
     .typing i:nth-child(2) { animation-delay: 0.2s; }
@@ -145,6 +182,21 @@ export class ChatComponent implements AfterViewChecked {
         this.busy.set(false);
       }
     });
+  }
+
+  /** Removes a user question and its paired assistant answer (if any) from the conversation. */
+  deleteQuestion(index: number): void {
+    this.messages.update(m => {
+      const copy = [...m];
+      const deleteCount = copy[index + 1]?.role === 'assistant' ? 2 : 1;
+      copy.splice(index, deleteCount);
+      return copy;
+    });
+  }
+
+  /** Clears the entire conversation. Nothing is persisted server-side, so this is instant. */
+  clearChat(): void {
+    this.messages.set([]);
   }
 
   ngAfterViewChecked(): void {

@@ -36,11 +36,6 @@ export const routes: Routes = [
         path: 'dashboard',
         loadComponent: () =>
           import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
-      },
-      {
-        path: 'billing',
-        loadComponent: () =>
-          import('./features/billing/billing.component').then(m => m.BillingComponent)
       }
     ]
   },

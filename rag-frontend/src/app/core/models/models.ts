@@ -31,6 +31,15 @@ export interface IngestionStatus {
   error: string;
 }
 
+export interface DocumentSummary {
+  id: string;
+  filename: string;
+  category: string;
+  state: 'QUEUED' | 'PROCESSING' | 'INDEXED' | 'FAILED';
+  chunks: number;
+  createdAt: string;
+}
+
 export interface AuthResponse {
   token: string;
   type: string;
